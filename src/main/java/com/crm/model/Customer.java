@@ -5,7 +5,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * 客户实体类，对应customers表
@@ -49,11 +49,11 @@ public class Customer {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Date createdAt;  // 创建时间
+    private LocalDateTime createdAt;  // 创建时间
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private Date updatedAt;  // 更新时间
+    private LocalDateTime updatedAt;  // 更新时间
 
     // 外键约束：关联创建人
     @ManyToOne(fetch = FetchType.LAZY)

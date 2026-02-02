@@ -10,9 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,12 +37,23 @@ public class FollowupController {
     public ResponseEntity<Map<String, Object>> getFollowups(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "limit", defaultValue = "10") int limit,
-            @RequestParam(value = "customer_id", required = false) Integer customerId,
+            @RequestParam(value = "customer_id", required = false) String customerIdStr,
             HttpSession session) {
 
         // 检查登录状态
         if (session.getAttribute("userId") == null) {
             return ResponseUtils.unauthorized("请先登录");
+        }
+
+        // 处理customer_id参数
+        Integer customerId = null;
+        if (customerIdStr != null && !customerIdStr.isEmpty()) {
+            try {
+                customerId = Integer.parseInt(customerIdStr);
+            } catch (NumberFormatException e) {
+                // 忽略格式错误的customer_id参数
+                customerId = null;
+            }
         }
 
         // 获取跟进记录列表
@@ -86,9 +96,10 @@ public class FollowupController {
         if (followupData.containsKey("follow_time")) {
             String followTimeStr = (String) followupData.get("follow_time");
             try {
-                Date followTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").parse(followTimeStr);
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+                LocalDateTime followTime = LocalDateTime.parse(followTimeStr, formatter);
                 followup.setFollowTime(followTime);
-            } catch (ParseException e) {
+            } catch (Exception e) {
                 return ResponseUtils.badRequest("跟进时间格式错误");
             }
         }
@@ -98,9 +109,10 @@ public class FollowupController {
             String nextFollowReminderStr = (String) followupData.get("next_follow_reminder");
             if (nextFollowReminderStr != null && !nextFollowReminderStr.isEmpty()) {
                 try {
-                    Date nextFollowReminder = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").parse(nextFollowReminderStr);
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+                    LocalDateTime nextFollowReminder = LocalDateTime.parse(nextFollowReminderStr, formatter);
                     followup.setNextFollowReminder(nextFollowReminder);
-                } catch (ParseException e) {
+                } catch (Exception e) {
                     return ResponseUtils.badRequest("下次跟进提醒时间格式错误");
                 }
             }

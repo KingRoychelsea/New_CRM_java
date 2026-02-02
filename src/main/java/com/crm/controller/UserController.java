@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -157,6 +158,146 @@ public class UserController {
             responseData.put("code", 404);
             responseData.put("message", "用户不存在");
             return new ResponseEntity<>(responseData, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    /**
+     * 获取用户列表（仅管理员）
+     * @param session HTTP会话
+     * @return 用户列表响应
+     */
+    @GetMapping("/users")
+    public ResponseEntity<Map<String, Object>> getUsers(HttpSession session) {
+        Integer userId = (Integer) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseUtils.unauthorized("请先登录");
+        }
+
+        User currentUser = userService.getUserById(userId);
+        if (!"admin".equals(currentUser.getRole())) {
+            return ResponseUtils.forbidden("权限不足");
+        }
+
+        List<User> users = userService.getAllUsers();
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("code", 200);
+        responseData.put("message", "操作成功");
+        responseData.put("data", users);
+        return new ResponseEntity<>(responseData, HttpStatus.OK);
+    }
+
+    /**
+     * 添加用户（仅管理员）
+     * @param userData 用户数据
+     * @param session HTTP会话
+     * @return 添加响应
+     */
+    @PostMapping("/users")
+    public ResponseEntity<Map<String, Object>> addUser(@RequestBody Map<String, String> userData, HttpSession session) {
+        Integer userId = (Integer) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseUtils.unauthorized("请先登录");
+        }
+
+        User currentUser = userService.getUserById(userId);
+        if (!"admin".equals(currentUser.getRole())) {
+            return ResponseUtils.forbidden("权限不足");
+        }
+
+        String username = userData.get("username");
+        String password = userData.get("password");
+        String nickname = userData.get("nickname");
+        String role = userData.get("role");
+
+        if (username == null || password == null || nickname == null || role == null) {
+            return ResponseUtils.badRequest("用户名、密码、昵称和角色不能为空");
+        }
+
+        if (userService.getUserByUsername(username) != null) {
+            return ResponseUtils.badRequest("用户名已存在");
+        }
+
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(PasswordUtils.encryptPassword(password));
+        user.setNickname(nickname);
+        user.setRole(role);
+
+        userService.addUser(user);
+        return ResponseUtils.success("添加成功");
+    }
+
+    /**
+     * 更新用户信息（仅管理员）
+     * @param id 用户ID
+     * @param userData 用户数据
+     * @param session HTTP会话
+     * @return 更新响应
+     */
+    @PutMapping("/users/{id}")
+    public ResponseEntity<Map<String, Object>> updateUser(@PathVariable Integer id, @RequestBody Map<String, String> userData, HttpSession session) {
+        Integer userId = (Integer) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseUtils.unauthorized("请先登录");
+        }
+
+        User currentUser = userService.getUserById(userId);
+        if (!"admin".equals(currentUser.getRole())) {
+            return ResponseUtils.forbidden("权限不足");
+        }
+
+        User user = userService.getUserById(id);
+        if (user == null) {
+            return ResponseUtils.notFound("用户不存在");
+        }
+
+        // 更新昵称
+        if (userData.containsKey("nickname")) {
+            user.setNickname(userData.get("nickname"));
+        }
+
+        // 更新角色
+        if (userData.containsKey("role")) {
+            user.setRole(userData.get("role"));
+        }
+
+        // 更新密码
+        if (userData.containsKey("password") && userData.get("password") != null && !userData.get("password").isEmpty()) {
+            user.setPassword(PasswordUtils.encryptPassword(userData.get("password")));
+        }
+
+        userService.updateUser(user);
+        return ResponseUtils.success("更新成功");
+    }
+
+    /**
+     * 删除用户（仅管理员）
+     * @param id 用户ID
+     * @param session HTTP会话
+     * @return 删除响应
+     */
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable Integer id, HttpSession session) {
+        Integer userId = (Integer) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseUtils.unauthorized("请先登录");
+        }
+
+        User currentUser = userService.getUserById(userId);
+        if (!"admin".equals(currentUser.getRole())) {
+            return ResponseUtils.forbidden("权限不足");
+        }
+
+        // 不能删除自己
+        if (id.equals(userId)) {
+            return ResponseUtils.badRequest("不能删除自己");
+        }
+
+        boolean deleted = userService.deleteUser(id);
+        if (deleted) {
+            return ResponseUtils.success("删除成功");
+        } else {
+            return ResponseUtils.notFound("用户不存在");
         }
     }
 

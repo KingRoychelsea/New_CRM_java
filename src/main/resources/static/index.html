@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRM系统 - 客户管理</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -27,6 +28,9 @@
                     </li>
                     <li class="menu-item" data-target="followup-module">
                         <a href="#">跟进记录</a>
+                    </li>
+                    <li class="menu-item" data-target="statistics-module">
+                        <a href="#">数据统计</a>
                     </li>
                     <li class="menu-item" data-target="user-module">
                         <a href="#">个人信息</a>
@@ -64,6 +68,7 @@
                             </select>
                         </div>
                         <button class="btn btn-primary" id="searchCustomerBtn">查询</button>
+                        <button class="btn btn-success" id="exportCustomerBtn">导出Excel</button>
                     </div>
 
                     <!-- 客户列表 -->
@@ -167,6 +172,49 @@
                             </div>
                             <button type="submit" class="btn btn-primary">保存修改</button>
                         </form>
+                    </div>
+                </div>
+
+                <!-- 数据统计模块 -->
+                <div id="statistics-module" class="module-content hidden">
+                    <div class="content-header">
+                        <h2>数据统计</h2>
+                    </div>
+
+                    <!-- 统计筛选栏 -->
+                    <div class="filter-bar">
+                        <div class="form-group">
+                            <label for="statisticsDays">统计天数</label>
+                            <select id="statisticsDays">
+                                <option value="7">最近7天</option>
+                                <option value="30">最近30天</option>
+                                <option value="90">最近90天</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="refreshStatisticsBtn">刷新数据</button>
+                    </div>
+
+                    <!-- 统计卡片 -->
+                    <div class="statistics-cards">
+                        <div class="card">
+                            <h3>客户来源分布</h3>
+                            <div id="customerSourceChart" style="height: 300px;"></div>
+                        </div>
+                        <div class="card">
+                            <h3>跟进方式分布</h3>
+                            <div id="followupMethodChart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="statistics-cards">
+                        <div class="card">
+                            <h3>客户数量趋势</h3>
+                            <div id="customerCountChart" style="height: 300px;"></div>
+                        </div>
+                        <div class="card">
+                            <h3>跟进记录趋势</h3>
+                            <div id="followupCountChart" style="height: 300px;"></div>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -284,63 +332,92 @@
 
         // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', function() {
-            // 检查登录状态
-            checkLoginStatus();
-            // 加载用户信息
-            loadUserInfo();
-            // 加载客户列表
-            loadCustomers();
-            // 绑定事件
-            bindEvents();
+            try {
+                // 检查登录状态
+                checkLoginStatus();
+                // 加载用户信息
+                loadUserInfo();
+                // 加载客户列表
+                loadCustomers();
+                // 绑定事件
+                bindEvents();
+            } catch (error) {
+                console.error('页面初始化错误:', error);
+                alert('页面初始化失败: ' + error.message);
+            }
         });
 
         // 检查登录状态
         function checkLoginStatus() {
-            const userInfo = localStorage.getItem('userInfo');
-            if (!userInfo) {
-                // 未登录，跳转到登录页
+            try {
+                const userInfo = localStorage.getItem('userInfo');
+                if (!userInfo) {
+                    // 未登录，跳转到登录页
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('检查登录状态错误:', error);
+                // 出错时跳转到登录页
                 window.location.href = 'login.html';
             }
         }
 
         // 加载用户信息
         function loadUserInfo() {
-            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-            if (userInfo) {
-                document.getElementById('userNickname').textContent = userInfo.nickname;
-                
-                // 加载个人信息模块
-                document.getElementById('userUsername').value = userInfo.username;
-                document.getElementById('userNicknameInput').value = userInfo.nickname;
-                document.getElementById('userRole').value = userInfo.role;
+            const userInfoStr = localStorage.getItem('userInfo');
+            if (userInfoStr) {
+                try {
+                    const userInfo = JSON.parse(userInfoStr);
+                    if (userInfo) {
+                        document.getElementById('userNickname').textContent = userInfo.nickname || '未知用户';
+                        
+                        // 加载个人信息模块
+                        document.getElementById('userUsername').value = userInfo.username || '';
+                        document.getElementById('userNicknameInput').value = userInfo.nickname || '';
+                        document.getElementById('userRole').value = userInfo.role || '';
+                    }
+                } catch (error) {
+                    console.error('解析用户信息失败:', error);
+                }
             }
         }
 
         // 加载客户列表
         function loadCustomers(page = 1) {
-            currentPage = page;
-            
-            const name = document.getElementById('filterName').value;
-            const phone = document.getElementById('filterPhone').value;
-            const source = document.getElementById('filterSource').value;
-            
-            fetch(`http://localhost:8080/api/customers?page=${page}&limit=10&name=${name}&phone=${phone}&source=${source}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.code === 200) {
-                        renderCustomerTable(data.data);
-                        renderCustomerPagination(data.page, data.total, data.limit);
-                        // 存储客户数据用于跟进记录选择
-                        customers = data.data;
-                        loadCustomerOptions();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('加载客户失败:', error);
-                    alert('加载客户失败，请检查网络连接');
-                });
+            try {
+                currentPage = page;
+                
+                const name = document.getElementById('filterName').value;
+                const phone = document.getElementById('filterPhone').value;
+                const source = document.getElementById('filterSource').value;
+                
+                console.log('加载客户列表:', { page, name, phone, source });
+                
+                fetch(`http://localhost:8080/api/customers?page=${page}&limit=10&name=${name}&phone=${phone}&source=${source}`)
+                    .then(response => {
+                        console.log('响应状态:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('响应数据:', data);
+                        if (data.code === 200) {
+                            renderCustomerTable(data.data);
+                            renderCustomerPagination(data.page, data.total, data.limit);
+                            // 存储客户数据用于跟进记录选择
+                            customers = data.data;
+                            loadCustomerOptions();
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('加载客户失败:', error);
+                        alert('加载客户失败，请检查网络连接');
+                    });
+            } catch (error) {
+                console.error('loadCustomers错误:', error);
+                alert('加载客户列表失败: ' + error.message);
+            }
         }
 
         // 渲染客户表格
@@ -389,7 +466,7 @@
                 // 页码
                 for (let i = 1; i <= totalPages; i++) {
                     html += `<li class="page-item ${i === page ? 'active' : ''}">
-                        <a class="page-link" onclick="loadCustomers(${i})"><${i}></a>
+                        <a class="page-link" onclick="loadCustomers(${i})">${i}</a>
                     </li>`;
                 }
                 
@@ -486,7 +563,7 @@
                 // 页码
                 for (let i = 1; i <= totalPages; i++) {
                     html += `<li class="page-item ${i === page ? 'active' : ''}">
-                        <a class="page-link" onclick="loadFollowups(${i})"><${i}></a>
+                        <a class="page-link" onclick="loadFollowups(${i})">${i}</a>
                     </li>`;
                 }
                 
@@ -523,8 +600,20 @@
                     // 加载对应模块数据
                     if (target === 'followup-module') {
                         loadFollowups();
+                    } else if (target === 'statistics-module') {
+                        loadStatistics();
                     }
                 });
+            });
+
+            // 刷新统计数据
+            document.getElementById('refreshStatisticsBtn').addEventListener('click', function() {
+                loadStatistics();
+            });
+
+            // 统计天数变化
+            document.getElementById('statisticsDays').addEventListener('change', function() {
+                loadStatistics();
             });
 
             // 退出登录
@@ -661,6 +750,30 @@
                 loadCustomers(1);
             });
 
+            // 导出客户列表为Excel
+            document.getElementById('exportCustomerBtn').addEventListener('click', function() {
+                const name = document.getElementById('filterName').value;
+                const phone = document.getElementById('filterPhone').value;
+                const source = document.getElementById('filterSource').value;
+                
+                // 构建导出URL
+                let url = `http://localhost:8080/api/customers/export?`;
+                if (name) url += `name=${encodeURIComponent(name)}&`;
+                if (phone) url += `phone=${encodeURIComponent(phone)}&`;
+                if (source) url += `source=${encodeURIComponent(source)}&`;
+                
+                // 移除末尾的&符号
+                url = url.replace(/&$/, '');
+                
+                // 创建隐藏的a标签并点击下载
+                const a = document.createElement('a');
+                a.href = url;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
+
             // 跟进记录查询
             document.getElementById('searchFollowupBtn').addEventListener('click', function() {
                 loadFollowups(1);
@@ -789,6 +902,259 @@
                     alert('删除跟进记录失败，请检查网络连接');
                 });
             }
+        }
+
+        // 加载统计数据
+        function loadStatistics() {
+            const days = document.getElementById('statisticsDays').value;
+            
+            // 加载客户来源分布统计
+            fetch(`http://localhost:8080/api/statistics/customer/source`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        renderCustomerSourceChart(data.data);
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('获取客户来源分布统计失败:', error);
+                    alert('获取客户来源分布统计失败，请检查网络连接');
+                });
+
+            // 加载跟进方式分布统计
+            fetch(`http://localhost:8080/api/statistics/followup/method`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        renderFollowupMethodChart(data.data);
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('获取跟进方式分布统计失败:', error);
+                    alert('获取跟进方式分布统计失败，请检查网络连接');
+                });
+
+            // 加载客户数量统计
+            fetch(`http://localhost:8080/api/statistics/customer/count?days=${days}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        renderCustomerCountChart(data.data);
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('获取客户数量统计失败:', error);
+                    alert('获取客户数量统计失败，请检查网络连接');
+                });
+
+            // 加载跟进记录数量统计
+            fetch(`http://localhost:8080/api/statistics/followup/count?days=${days}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        renderFollowupCountChart(data.data);
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('获取跟进记录数量统计失败:', error);
+                    alert('获取跟进记录数量统计失败，请检查网络连接');
+                });
+        }
+
+        // 渲染客户来源分布图表
+        function renderCustomerSourceChart(data) {
+            const chart = echarts.init(document.getElementById('customerSourceChart'));
+            const sources = Object.keys(data);
+            const counts = Object.values(data);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    data: sources
+                },
+                series: [
+                    {
+                        name: '客户来源',
+                        type: 'pie',
+                        radius: '50%',
+                        data: sources.map((source, index) => ({
+                            value: counts[index],
+                            name: source
+                        })),
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }
+                ]
+            };
+            
+            chart.setOption(option);
+            
+            // 窗口大小变化时，重新调整图表大小
+            window.addEventListener('resize', function() {
+                chart.resize();
+            });
+        }
+
+        // 渲染跟进方式分布图表
+        function renderFollowupMethodChart(data) {
+            const chart = echarts.init(document.getElementById('followupMethodChart'));
+            const methods = Object.keys(data);
+            const counts = Object.values(data);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    data: methods
+                },
+                series: [
+                    {
+                        name: '跟进方式',
+                        type: 'pie',
+                        radius: '50%',
+                        data: methods.map((method, index) => ({
+                            value: counts[index],
+                            name: method
+                        })),
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }
+                ]
+            };
+            
+            chart.setOption(option);
+            
+            // 窗口大小变化时，重新调整图表大小
+            window.addEventListener('resize', function() {
+                chart.resize();
+            });
+        }
+
+        // 渲染客户数量趋势图表
+        function renderCustomerCountChart(data) {
+            const chart = echarts.init(document.getElementById('customerCountChart'));
+            const dates = Object.keys(data);
+            const counts = Object.values(data);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: '{b}<br/>客户数量: {c}'
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: dates
+                },
+                yAxis: {
+                    type: 'value',
+                    minInterval: 1
+                },
+                series: [
+                    {
+                        name: '客户数量',
+                        type: 'line',
+                        stack: 'Total',
+                        data: counts,
+                        areaStyle: {
+                            opacity: 0.3
+                        },
+                        emphasis: {
+                            focus: 'series'
+                        }
+                    }
+                ]
+            };
+            
+            chart.setOption(option);
+            
+            // 窗口大小变化时，重新调整图表大小
+            window.addEventListener('resize', function() {
+                chart.resize();
+            });
+        }
+
+        // 渲染跟进记录数量趋势图表
+        function renderFollowupCountChart(data) {
+            const chart = echarts.init(document.getElementById('followupCountChart'));
+            const dates = Object.keys(data);
+            const counts = Object.values(data);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: '{b}<br/>跟进记录: {c}'
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: dates
+                },
+                yAxis: {
+                    type: 'value',
+                    minInterval: 1
+                },
+                series: [
+                    {
+                        name: '跟进记录',
+                        type: 'line',
+                        stack: 'Total',
+                        data: counts,
+                        areaStyle: {
+                            opacity: 0.3
+                        },
+                        emphasis: {
+                            focus: 'series'
+                        }
+                    }
+                ]
+            };
+            
+            chart.setOption(option);
+            
+            // 窗口大小变化时，重新调整图表大小
+            window.addEventListener('resize', function() {
+                chart.resize();
+            });
         }
     </script>
 </body>

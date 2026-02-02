@@ -108,6 +108,15 @@ public class ResponseUtils {
     }
 
     /**
+     * 403错误响应（权限不足）
+     * @param message 错误消息
+     * @return 403错误响应实体
+     */
+    public static ResponseEntity<Map<String, Object>> forbidden(String message) {
+        return error(403, message);
+    }
+
+    /**
      * 500错误响应（服务器错误）
      * @param message 错误消息
      * @return 500错误响应实体

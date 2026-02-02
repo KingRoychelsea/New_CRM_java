@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * 用户服务类，处理用户认证相关的业务逻辑
  */
@@ -78,6 +80,36 @@ public class UserService {
         if (user != null) {
             user.setPassword(PasswordUtils.encryptPassword(newPassword));
             userRepository.save(user);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 获取所有用户
+     * @return 用户列表
+     */
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    /**
+     * 添加用户
+     * @param user 用户对象
+     * @return 添加的用户对象
+     */
+    public User addUser(User user) {
+        return userRepository.save(user);
+    }
+
+    /**
+     * 删除用户
+     * @param id 用户ID
+     * @return 是否删除成功
+     */
+    public boolean deleteUser(Integer id) {
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
             return true;
         }
         return false;

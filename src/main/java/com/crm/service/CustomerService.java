@@ -10,6 +10,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * 客户服务类，处理客户相关的业务逻辑
  */
@@ -87,6 +93,42 @@ public class CustomerService {
         } else {
             return customerRepository.findByNameContainingAndPhoneContaining(name != null ? name : "", phone != null ? phone : "", pageable);
         }
+    }
+
+    /**
+     * 获取客户来源分布统计
+     * @return 客户来源分布统计数据
+     */
+    public Map<String, Long> getCustomerSourceStatistics() {
+        List<Object[]> results = customerRepository.countBySource();
+        Map<String, Long> statistics = new HashMap<>();
+        for (Object[] result : results) {
+            if (result[0] != null) {
+                statistics.put(result[0].toString(), (Long) result[1]);
+            }
+        }
+        return statistics;
+    }
+
+    /**
+     * 获取客户数量统计（按时间段）
+     * @param days 天数
+     * @return 客户数量统计数据
+     */
+    public Map<String, Long> getCustomerCountStatistics(int days) {
+        Map<String, Long> statistics = new HashMap<>();
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(days - 1);
+        
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            String dateStr = date.toString();
+            LocalDateTime startDateTime = date.atStartOfDay();
+            LocalDateTime endDateTime = date.plusDays(1).atStartOfDay().minusSeconds(1);
+            long count = customerRepository.countByCreatedAtBetween(startDateTime, endDateTime);
+            statistics.put(dateStr, count);
+        }
+        
+        return statistics;
     }
 
 }

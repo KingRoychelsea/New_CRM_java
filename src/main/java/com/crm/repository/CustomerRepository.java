@@ -4,7 +4,11 @@ import com.crm.model.Customer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 客户数据访问接口，对应customers表
@@ -38,5 +42,20 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
      * @return 分页客户列表
      */
     Page<Customer> findByNameContainingAndPhoneContainingAndSource(String name, String phone, String source, Pageable pageable);
+
+    /**
+     * 根据来源统计客户数量
+     * @return 客户来源分布统计数据
+     */
+    @Query("SELECT c.source, COUNT(c.id) FROM Customer c GROUP BY c.source")
+    List<Object[]> countBySource();
+
+    /**
+     * 根据创建时间范围统计客户数量
+     * @param startDateTime 开始时间
+     * @param endDateTime 结束时间
+     * @return 客户数量
+     */
+    long countByCreatedAtBetween(java.time.LocalDateTime startDateTime, java.time.LocalDateTime endDateTime);
 
 }

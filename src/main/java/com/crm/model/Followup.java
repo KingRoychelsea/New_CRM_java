@@ -5,7 +5,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * 跟进记录实体类，对应followups表
@@ -30,7 +30,7 @@ public class Followup {
     private Integer userId;  // 跟进人ID，关联users表
 
     @Column(name = "follow_time", nullable = false)
-    private Date followTime;  // 跟进时间
+    private LocalDateTime followTime;  // 跟进时间
 
     @Column(name = "follow_method", length = 20, nullable = false)
     private String followMethod;  // 跟进方式：电话、微信、面谈
@@ -39,15 +39,15 @@ public class Followup {
     private String content;  // 跟进内容
 
     @Column(name = "next_follow_reminder")
-    private Date nextFollowReminder;  // 下次跟进提醒时间
+    private LocalDateTime nextFollowReminder;  // 下次跟进提醒时间
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Date createdAt;  // 创建时间
+    private LocalDateTime createdAt;  // 创建时间
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private Date updatedAt;  // 更新时间
+    private LocalDateTime updatedAt;  // 更新时间
 
     // 外键约束：关联客户和跟进人
     @ManyToOne(fetch = FetchType.LAZY)
