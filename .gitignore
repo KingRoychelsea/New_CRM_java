@@ -44,3 +44,49 @@ build/
 *.tmp
 *.temp
 .cache
+
+# Maven
+maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# Build
+.target/
+target/
+
+# Maven distribution
+apache-maven-3.8.8/
+apache-maven-3.8.8-bin.zip
+
+# Java
+*.jar
+*.war
+*.ear
+
+# IDE
+.classpath
+.project
+.settings/
+
+# IntelliJ
+.idea/
+out/
+
+# Eclipse
+bin/
+
+# NetBeans
+nbproject/private/
+build/
+dist/
+nbactions.xml
+nb-configuration.xml
+
+# Gradle
+build/
+.gradle/
+
+# OS
+Thumbs.db
+
+# Logs
+*.log
