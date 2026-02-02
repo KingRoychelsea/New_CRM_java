@@ -324,7 +324,7 @@
             const phone = document.getElementById('filterPhone').value;
             const source = document.getElementById('filterSource').value;
             
-            fetch(`http://localhost:5000/api/customers?page=${page}&limit=10&name=${name}&phone=${phone}&source=${source}`)
+            fetch(`http://localhost:8080/api/customers?page=${page}&limit=10&name=${name}&phone=${phone}&source=${source}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.code === 200) {
@@ -424,7 +424,7 @@
         function loadFollowups(page = 1) {
             const customerId = document.getElementById('filterCustomer').value;
             
-            fetch(`http://localhost:5000/api/followups?page=${page}&limit=10&customer_id=${customerId}`)
+            fetch(`http://localhost:8080/api/followups?page=${page}&limit=10&customer_id=${customerId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.code === 200) {
@@ -529,9 +529,9 @@
 
             // 退出登录
             document.getElementById('logoutBtn').addEventListener('click', function() {
-                fetch('http://localhost:5000/api/logout', {
-                    method: 'POST'
-                })
+                fetch('http://localhost:8080/api/logout', {
+                method: 'POST'
+            })
                 .then(() => {
                     // 清除本地存储
                     localStorage.removeItem('userInfo');
@@ -573,7 +573,7 @@
                     return;
                 }
                 
-                const url = id ? `http://localhost:5000/api/customers/${id}` : 'http://localhost:5000/api/customers';
+                const url = id ? `http://localhost:8080/api/customers/${id}` : 'http://localhost:8080/api/customers';
                 const method = id ? 'PUT' : 'POST';
                 
                 fetch(url, {
@@ -627,7 +627,7 @@
                     return;
                 }
                 
-                fetch('http://localhost:5000/api/followups', {
+                fetch('http://localhost:8080/api/followups', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -673,7 +673,7 @@
                 const nickname = document.getElementById('userNicknameInput').value;
                 const password = document.getElementById('userPassword').value;
                 
-                fetch('http://localhost:5000/api/user/update', {
+                fetch('http://localhost:8080/api/user/update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -703,7 +703,7 @@
 
         // 编辑客户
         function editCustomer(id) {
-            fetch(`http://localhost:5000/api/customers/${id}`)
+            fetch(`http://localhost:8080/api/customers/${id}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.code === 200) {
@@ -731,7 +731,7 @@
         // 删除客户
         function deleteCustomer(id) {
             if (confirm('确定要删除这个客户吗？删除后相关的跟进记录也会被删除')) {
-                fetch(`http://localhost:5000/api/customers/${id}`, {
+                fetch(`http://localhost:8080/api/customers/${id}`, {
                     method: 'DELETE'
                 })
                 .then(response => response.json())
@@ -772,7 +772,7 @@
         // 删除跟进记录
         function deleteFollowup(id) {
             if (confirm('确定要删除这条跟进记录吗？')) {
-                fetch(`http://localhost:5000/api/followups/${id}`, {
+                fetch(`http://localhost:8080/api/followups/${id}`, {
                     method: 'DELETE'
                 })
                 .then(response => response.json())

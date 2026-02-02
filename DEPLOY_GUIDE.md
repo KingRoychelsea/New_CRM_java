@@ -50,53 +50,68 @@
    
    应该能看到 `users`、`customers` 和 `followups` 三个表
 
-### 步骤2：安装Python依赖
+### 步骤2：构建和运行Java后端服务
 1. **打开命令行工具**，进入项目目录：
    
    ```bash
    cd d:\trae_project\New_CRM
    ```
    
-2. **执行以下命令安装依赖**：
+2. **执行Maven构建命令**（确保已安装Maven）：
    
    ```bash
-   pip install -r requirements.txt
+   mvn clean package
+   ```
+   
+   看到以下输出表示构建成功：
+   
+   ```
+   [INFO] BUILD SUCCESS
+   [INFO] ------------------------------------------------------------------------
+   [INFO] Total time:  10.543 s
+   [INFO] Finished at: 2024-07-01T12:00:00+08:00
+   [INFO] ------------------------------------------------------------------------
    ```
 
-### 步骤3：启动后端服务
-1. **在项目目录下执行以下命令**：
+3. **启动Java后端服务**：
    
    ```bash
-   python app.py
+   java -jar target/crm-system-0.0.1-SNAPSHOT.jar
    ```
    
    看到以下输出表示服务启动成功：
    
    ```
-   * Serving Flask app "app" (lazy loading)
-   * Environment: production
-     WARNING: This is a development server. Do not use it in a production deployment.
-     Use a production WSGI server instead.
-   * Debug mode: on
-   * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
-   * Restarting with stat
-   * Debugger is active!
-   * Debugger PIN: XXX-XXX-XXX
+   .   ____          _            __ _ _
+   /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+   ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+   \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+   '  |____| .__|_| |_|_| |_\__, | / / / /
+   =========|_|==============|___/=/_/_/_/
+   :: Spring Boot ::        (v2.7.0)
+
+   2024-07-01 12:00:00.000  INFO 12345 --- [           main] com.crm.CrmSystemApplication            : Starting CrmSystemApplication using Java 11.0.15 on DESKTOP-XXXX with PID 12345 (D:\trae_project\New_CRM\target\crm-system-0.0.1-SNAPSHOT.jar started by user in D:\trae_project\New_CRM)
+   2024-07-01 12:00:00.001  INFO 12345 --- [           main] com.crm.CrmSystemApplication            : No active profile set, falling back to default profiles: default
+   2024-07-01 12:00:01.234  INFO 12345 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+   2024-07-01 12:00:01.245  INFO 12345 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+   2024-07-01 12:00:01.246  INFO 12345 --- [           main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.63]
+   2024-07-01 12:00:01.356  INFO 12345 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+   2024-07-01 12:00:01.367  INFO 12345 --- [           main] com.crm.CrmSystemApplication            : Started CrmSystemApplication in 1.5 seconds (JVM running for 1.8)
    ```
 
-### 步骤4：访问前端页面
+### 步骤3：访问前端页面
 1. **打开浏览器**
    - 使用Chrome、Firefox、Edge等现代浏览器
-   - 访问以下地址：
-   
-   ```
-   http://localhost:5000/login.html
-   ```
-   
-   或者直接打开本地文件：
+   - 直接打开本地文件：
    
    ```
    file:///d:/trae_project/New_CRM/login.html
+   ```
+   
+   或者通过后端服务访问：
+   
+   ```
+   http://localhost:8080/login.html
    ```
 
 2. **登录系统**
@@ -136,9 +151,9 @@
 ### 3. 前端无法访问后端API
 - **问题**：浏览器控制台显示跨域错误或404错误
 - **解决方案**：
-  - 确保后端服务正在运行（http://localhost:5000）
+  - 确保后端服务正在运行（http://localhost:8080）
   - 检查浏览器控制台的错误信息
-  - 确认前端请求的API地址是否正确
+  - 确认前端请求的API地址是否正确（应为 http://localhost:8080/api）
 
 ### 4. 登录失败
 - **问题**：输入正确的用户名和密码但登录失败
@@ -146,14 +161,32 @@
   - 检查MySQL中 `users` 表是否有正确的管理员账号
   - 确认密码是否使用MD5加密存储
   - 检查后端服务日志中的错误信息
+  - 确保Spring Boot应用启动时没有报错
 
 ## 技术支持
 
 如果在部署过程中遇到任何问题，请按照以下步骤排查：
 
-1. 检查MySQL服务是否正常运行
-2. 确认数据库连接参数是否正确
-3. 查看后端服务日志中的错误信息
-4. 检查浏览器控制台的网络请求和错误信息
+1. **检查MySQL服务是否正常运行**
+   - 确保MySQL服务已启动
+   - 验证数据库连接参数是否正确
+
+2. **检查Java环境**
+   - 确保已安装JDK 8或更高版本
+   - 确保Maven已正确安装并配置环境变量
+
+3. **查看后端服务日志中的错误信息**
+   - Spring Boot启动时的日志会显示详细的错误信息
+   - 常见错误包括：数据库连接失败、端口被占用、依赖缺失等
+
+4. **检查浏览器控制台的网络请求和错误信息**
+   - 查看API请求是否成功
+   - 检查是否有跨域错误
+   - 确认前端请求的API地址是否正确
+
+5. **常见Java相关问题**
+   - **端口被占用**：使用 `netstat -ano | findstr :8080` 查看占用端口的进程，然后结束该进程
+   - **Maven构建失败**：检查网络连接，确保依赖可以正常下载
+   - **数据库连接失败**：检查MySQL服务状态和连接参数
 
 系统已配置为使用您提供的数据库连接信息，按照上述步骤操作即可顺利部署和运行。
